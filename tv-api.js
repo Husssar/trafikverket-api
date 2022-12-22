@@ -21,7 +21,6 @@ var xmlRequest = "<REQUEST>" +
     "</QUERY>" +
     "</REQUEST>";
 
-//const rawResponse = await fetch('https://webhook.site/0980d70f-97c7-4391-80ec-5ebf9d95f8cd', {
 (async () => {
     const rawResponse = await fetch('https://api.trafikinfo.trafikverket.se/v2/data.json', {
 
@@ -34,11 +33,7 @@ var xmlRequest = "<REQUEST>" +
         body: xmlRequest
     });
     const content = await rawResponse.json();
-    //   console.log(content.RESPONSE.RESULT[0].WeatherStation.Active)
-    //console.log(content.RESPONSE.RESULT[0].WeatherStation[0].Active)
 
     console.log(content.RESPONSE.RESULT[0].WeatherStation[0])
-
-    // console.log(content.RESPONSE.RESULT[0].WeatherStation[0].Measurement)
 
 })();
