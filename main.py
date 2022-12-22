@@ -1,4 +1,5 @@
 import argparse
+import sys
 import time
 import requests
 
@@ -45,7 +46,8 @@ def get_data(arguments):
 def push_tb(url, secret, data):
     headers = {
         "Content-Type": "application/json",
-        "Secret": secret
+        "Secret": secret,
+        "Charset": "UTF-8"
     }
     try:
         response = requests.post(url=url,headers=headers, json=data)
@@ -55,22 +57,26 @@ def push_tb(url, secret, data):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--key", help="Need to have a key from trafikverket to use this script")
-    parser.add_argument("--interval", default=500, type=int,
+    parser.add_argument("--key", required=True,
+                        help="Need to have a key from trafikverket to use this script")
+    parser.add_argument("--interval", default=500, type=int, required=True,
                         help="Interval on how often (s) it should push to Thingsboard, default 500s")
-    parser.add_argument("--tburl", help="Thingsboard url")
-    parser.add_argument("--tbsecret", help="Thingsboard url")
+    parser.add_argument("--tburl", help="Thingsboard url", required=True)
+    parser.add_argument("--tbsecret", help="Thingsboard url", required=True)
     parser.add_argument("--tvurl", default="https://api.trafikinfo.trafikverket.se/v2/data.json",
                         required=False,
                         help="Thingsboard url")
 
     args=parser.parse_args()
     measure_time_old = ''
-    while True:
 
+    print("Starting application. Args was supplied to application.")
+    print("")
+    while True:
         tv_data = get_data(args)
         measure_time =tv_data['RESPONSE']['RESULT'][0]['WeatherStation'][0]['Measurement']['MeasureTime']
-        # Only push if new data
+
+        # Only push if data us updated
         if measure_time != measure_time_old:
             push_tb(args.tburl, args.tbsecret, tv_data)
             measure_time_old = measure_time
