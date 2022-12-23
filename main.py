@@ -1,7 +1,12 @@
 import argparse
-import sys
 import time
 import requests
+import keys
+
+# keys.py should include
+# KEY=yourkey
+# TBSECRET=yourkey
+# Else just proved the key via arguments
 
 
 def xml_body_builder(key):
@@ -28,17 +33,19 @@ def xml_body_builder(key):
     return xmlRequest.replace('    ', '')
 
 
-def get_data(arguments):
+def get_data(key, url):
     headers = {
         "Content-Type": "application/xml",
         'Accept': 'application/json',
     }
-    data = xml_body_builder(arguments.key)
+    data = xml_body_builder(key)
 
     try:
-        response = requests.post(url=arguments.tvurl, headers=headers, data=data)
+        response = requests.post(url=url, headers=headers, data=data)
+        if response.status_code >= 300:
+            raise Exception()
     except:
-        print(f"Something went wrong in the post-reqeust to {arguments.tvurl}, response was {response.status_code}")
+        print(f"Something went wrong in the post-reqeust to {url}, response was {response.status_code}")
 
     return response.json()
 
@@ -51,36 +58,51 @@ def push_tb(url, secret, data):
     }
     try:
         response = requests.post(url=url,headers=headers, json=data)
+        if response.status_code >= 300:
+            raise Exception()
     except:
         print(f"Something went wrong in the post-reqeust to {url}, response was {response.status_code}")
 
 
-def main():
+def run():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--key", required=True,
+    parser.add_argument("--key", required=False,
                         help="Need to have a key from trafikverket to use this script")
     parser.add_argument("--interval", default=500, type=int, required=True,
                         help="Interval on how often (s) it should push to Thingsboard, default 500s")
     parser.add_argument("--tburl", help="Thingsboard url", required=True)
-    parser.add_argument("--tbsecret", help="Thingsboard url", required=True)
+    parser.add_argument("--tbsecret", help="Thingsboard url", required=False)
     parser.add_argument("--tvurl", default="https://api.trafikinfo.trafikverket.se/v2/data.json",
                         required=False,
                         help="Thingsboard url")
 
     args=parser.parse_args()
     measure_time_old = ''
+    measure_time = 'empty'
+    tbsecret = keys.TB
+    key = keys.KEY
 
-    print("Starting application. Args was supplied to application.")
-    print("")
+    if not key or not tbsecret:
+        print("Missing keys for trafikverket or for thingsboard secret")
+
+    print("Starting application ...")
+
+    if args.tbsecret:
+        tbsecret = args.tbsecret
+    if args.key:
+        key = args.key
+
     while True:
-        tv_data = get_data(args)
-        measure_time =tv_data['RESPONSE']['RESULT'][0]['WeatherStation'][0]['Measurement']['MeasureTime']
+        tv_data = get_data(key, args.tvurl)
+        if 'MeasureTime' in tv_data:
+            measure_time =tv_data['RESPONSE']['RESULT'][0]['WeatherStation'][0]['Measurement']['MeasureTime']
 
-        # Only push if data us updated
+        # Only push if data is updated
         if measure_time != measure_time_old:
-            push_tb(args.tburl, args.tbsecret, tv_data)
+            push_tb(args.tburl, tbsecret, tv_data)
             measure_time_old = measure_time
 
         time.sleep(args.interval)
 
-main()
+if __name__ == '__main__':
+    run()
