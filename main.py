@@ -92,8 +92,6 @@ def run():
     tbsecret = keys.TB
     key = keys.KEY
     
-    if not key or not tbsecret:
-        logging.warning("Missing keys for trafikverket or for thingsboard secret")
 
     logging.info("Starting application ...")
 
@@ -101,6 +99,9 @@ def run():
         tbsecret = args.tbsecret
     if args.key:
         key = args.key
+
+    if not key or not tbsecret:
+       logging.warning("Missing keys for trafikverket or for thingsboard secret")
 
     while True:
         tv_data = get_data(key, args.tvurl)
