@@ -2,6 +2,7 @@ import argparse
 import time
 import requests
 import keys
+import logging
 
 # keys.py should include
 # KEY=yourkey
@@ -34,6 +35,7 @@ def xml_body_builder(key):
 
 
 def get_data(key, url):
+    logging.info(f"Collecting data from {url}")
     headers = {
         "Content-Type": "application/xml",
         'Accept': 'application/json',
@@ -45,12 +47,13 @@ def get_data(key, url):
         if response.status_code >= 300:
             raise Exception()
     except:
-        print(f"Something went wrong in the post-reqeust to {url}, response was {response.status_code}")
+        logging.warning(f"Something went wrong in the post-reqeust to {url}, response was {response.status_code}")
 
     return response.json()
 
 
 def push_tb(url, secret, data):
+    logging.info(f"Pushing {data} to {url}")
     headers = {
         "Content-Type": "application/json",
         "Secret": secret,
@@ -61,14 +64,21 @@ def push_tb(url, secret, data):
         if response.status_code >= 300:
             raise Exception()
     except:
-        print(f"Something went wrong in the post-reqeust to {url}, response was {response.status_code}")
+        logging.warning(f"Something went wrong in the post-reqeust to {url}, response was {response.status_code}")
+
+def time_to_sleep(sleep_time):
+    logging.info(f"Sleeping for {sleep_time}")
+    time.sleep(sleep_time)
 
 
 def run():
+    logging.basicConfig(level=logging.INFO)
+    logging.info('Started')
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--key", required=False,
                         help="Need to have a key from trafikverket to use this script")
-    parser.add_argument("--interval", default=500, type=int, required=True,
+    parser.add_argument("--interval", default=500, type=int, required=False,
                         help="Interval on how often (s) it should push to Thingsboard, default 500s")
     parser.add_argument("--tburl", help="Thingsboard url", required=True)
     parser.add_argument("--tbsecret", help="Thingsboard url", required=False)
@@ -81,11 +91,11 @@ def run():
     measure_time = 'empty'
     tbsecret = keys.TB
     key = keys.KEY
-
+    
     if not key or not tbsecret:
-        print("Missing keys for trafikverket or for thingsboard secret")
+        logging.warning("Missing keys for trafikverket or for thingsboard secret")
 
-    print("Starting application ...")
+    logging.info("Starting application ...")
 
     if args.tbsecret:
         tbsecret = args.tbsecret
@@ -101,8 +111,8 @@ def run():
         if measure_time != measure_time_old:
             push_tb(args.tburl, tbsecret, tv_data)
             measure_time_old = measure_time
-
-        time.sleep(args.interval)
+        
+        time_to_sleep(args.interval)
 
 if __name__ == '__main__':
     run()
