@@ -72,7 +72,9 @@ def time_to_sleep(sleep_time):
 
 
 def run():
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s', level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
+
+
     logging.info('Started')
 
     parser = argparse.ArgumentParser()
@@ -88,7 +90,7 @@ def run():
 
     args=parser.parse_args()
     measure_time_old = ''
-    measure_time = 'empty'
+    measure_time = ''
     tbsecret = keys.TB
     key = keys.KEY
     
@@ -105,8 +107,10 @@ def run():
 
     while True:
         tv_data = get_data(key, args.tvurl)
-        if 'MeasureTime' in tv_data:
-            measure_time =tv_data['RESPONSE']['RESULT'][0]['WeatherStation'][0]['Measurement']['MeasureTime']
+        if 'MeasureTime' in str(tv_data):
+            measure_time = tv_data['RESPONSE']['RESULT'][0]['WeatherStation'][0]['Measurement']['MeasureTime']
+            logging.info(f"Measure Time updated to {measure_time}")
+            logging.info(f"Old Measure time was {measure_time_old}")
 
         # Only push if data is updated
         if measure_time != measure_time_old:
